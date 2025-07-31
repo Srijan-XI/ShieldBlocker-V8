@@ -39,4 +39,3 @@ ShieldBlocker-V8/
     ├── popup.html
     ├── popup.js
     └── popup.css
-```
