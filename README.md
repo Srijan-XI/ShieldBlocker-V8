@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# ShieldBlocker-V8
-ShieldBlocker-V8 is ad-blocker tools 
-=======
 # 🛡️ ShieldBlocker-V8
 
 **ShieldBlocker-V8** is a lightweight, cross-browser (Chrome and Firefox) ad blocker powered by WebExtension APIs. It blocks intrusive ads using static filter rules and allows per-site control directly from the popup interface.
@@ -43,4 +39,4 @@ ShieldBlocker-V8/
     ├── popup.html
     ├── popup.js
     └── popup.css
->>>>>>> f405668 (ad-blocker)
+```
