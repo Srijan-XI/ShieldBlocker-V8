@@ -1,0 +1,30 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 1rem;
+  width: 250px;
+  background: #f4f4f4;
+  color: #333;
+}
+
+#container {
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+#toggle {
+  padding: 0.5rem 1rem;
+  background-color: #0055ff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#toggle:hover {
+  background-color: #003dcc;
+}
