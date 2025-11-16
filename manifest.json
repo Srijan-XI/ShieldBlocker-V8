@@ -27,10 +27,17 @@
     "128": "icons/icon128.png"
   },
   "declarative_net_request": {
-    "rule_resources": [{
-      "id": "ruleset_1",
-      "enabled": true,
-      "path": "rules/blocklist.json"
-    }]
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules/blocklist.json"
+      },
+      {
+        "id": "generated_ruleset",
+        "enabled": false,
+        "path": "rules/generated_blocklist.json"
+      }
+    ]
   }
 }

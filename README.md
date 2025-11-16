@@ -82,6 +82,96 @@ Firefox (using temporary add-on):
 - Allowlist key: `allowlist` (array of hostnames).
 - Popup obtains consolidated state via background message `GET_STATE`.
 - Content script checks both `globalEnabled` and allowlist before injecting CSS.
+- Generated ruleset (optional) lives at `rules/generated_blocklist.json` and is referenced in `manifest.json` as `generated_ruleset` (disabled by default).
+
+---
+
+## 🧪 Dataset-Driven Rule Generation
+
+The `dataset/` folder contains source metadata for many public filter/host lists:
+
+- `Add_Block_data.csv`: CSV with columns including `tagIds`, `primaryViewUrl` referencing raw list URLs.
+- `response.json`: Expanded JSON version of the same dataset.
+
+### Script
+Run the generation script to create a simplified blocklist from selected remote lists:
+
+```powershell
+pwsh -c "npm run generate:rules"
+```
+
+### High-Performance Go Generator (Concurrent)
+
+For faster large-list aggregation use the Go tool (concurrent fetching, streaming CSV parsing):
+
+```powershell
+go run ./go/cmd/generator --limit 800 --c 12
+```
+
+Outputs to `rules/generated_blocklist_go.json` by default. Adjust flags:
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--csv` | Path to dataset CSV | `dataset/Add_Block_data.csv` |
+| `--limit` | Max domains/rules | 400 |
+| `--c` | Concurrent fetch workers | 10 |
+| `--timeout` | Per-request timeout | 12s |
+| `--out` | Output file path | rules/generated_blocklist_go.json |
+| `--api` | Run HTTP server instead of one-shot | false |
+
+Start API server (dynamic on-demand rule generation):
+
+```powershell
+go run ./go/cmd/generator --api --limit 500
+```
+
+Endpoints:
+- `GET /health` → `ok`
+- `GET /generate?limit=500` → JSON array of MV3 rules
+
+To enable generated ruleset (after copying output to `rules/generated_blocklist.json` or similar):
+
+```javascript
+chrome.declarativeNetRequest.updateEnabledRulesets({
+    enableRulesetIds: ['generated_ruleset','ruleset_1']
+});
+```
+
+Performance characteristics:
+- Streaming CSV parsing avoids loading entire dataset JSON.
+- Bounded concurrency prevents network saturation.
+- Domain extraction handles hosts, ABP, cosmetic filters, generic patterns.
+- Deduplication occurs before rule object creation.
+
+---
+
+This will:
+- Fetch remote lists whose tag IDs overlap ads/tracking/malware (heuristic set `{2,3,6}`).
+- Extract domain tokens and produce MV3 `declarativeNetRequest` rules capped by a configurable limit (default 400).
+- Write output to `rules/generated_blocklist.json`.
+
+Enable the generated ruleset by editing `manifest.json` or at runtime:
+
+```javascript
+chrome.declarativeNetRequest.updateEnabledRulesets({
+    enableRulesetIds: ['generated_ruleset','ruleset_1']
+});
+```
+
+### Adjust Rule Volume
+Pass a custom limit (e.g. 800):
+
+```powershell
+node scripts/generate-blocklist.js 800
+```
+
+### Caveats
+- Remote fetches rely on public HTTPS; failures are silently skipped.
+- Rule IDs start at 1000 for generated set; avoid collisions if adding more.
+- Not all extracted domains guarantee ad relevance; post-filter manually for precision.
+- Respect original list licenses before distributing combined output.
+
+---
 
 ---
 

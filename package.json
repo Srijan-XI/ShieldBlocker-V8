@@ -1,0 +1,12 @@
+{
+  "name": "shieldblocker-v8-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "generate:rules": "node scripts/generate-blocklist.js 400"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

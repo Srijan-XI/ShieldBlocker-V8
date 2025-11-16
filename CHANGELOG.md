@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - (placeholder) Remote signed rule updates
 - (placeholder) Sync storage option
 
-## [1.0.1] - 2025-11-16
+## [1.0.1] - 2025-11-17
 ### Added
 - Global pause/resume blocking functionality (`globalEnabled` state).
 - Accessible, semantic popup layout with panels, badges, and tips section.
@@ -32,7 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Security / Privacy
 - Explicit privacy section: only hostnames stored locally, no telemetry.
 
-## [1.0.0] - 2025-11-16
+## [1.0.0] - 2025-11-17
 ### Added
 - Initial release of ShieldBlocker-V8.
 - Basic per-site allowlist toggle.
