@@ -7,11 +7,31 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div id="container">
-    <h1>🛡 ShieldBlocker-V8</h1>
-    <p id="status">Checking site...</p>
-    <button id="toggle">Toggle for this site</button>
-  </div>
+  <header class="app-header" role="banner">
+    <h1 class="app-title" aria-label="Extension Title">🛡 ShieldBlocker</h1>
+    <div id="global-status" class="badge" aria-live="polite">Loading…</div>
+  </header>
+  <main id="main" role="main">
+    <section class="panel" aria-labelledby="site-status-label">
+      <h2 id="site-status-label" class="panel-title">Current Site</h2>
+      <p id="site-status" class="status-text" aria-live="polite">Detecting…</p>
+      <div class="actions-row">
+        <button id="site-toggle" class="btn" aria-pressed="false">Toggle Site Blocking</button>
+        <button id="global-toggle" class="btn secondary" aria-pressed="false">Toggle Global</button>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="allowlist-label">
+      <h2 id="allowlist-label" class="panel-title">Allowed Sites</h2>
+      <ul id="allowlist" class="list" aria-live="polite" aria-label="Allowed sites list"></ul>
+    </section>
+    <section class="panel small" aria-labelledby="tips-label">
+      <h2 id="tips-label" class="panel-title">Tips</h2>
+      <p class="hint">Use Global toggle to pause all blocking without changing your site list.</p>
+    </section>
+  </main>
+  <footer class="footer" role="contentinfo">
+    <small>v1.0 • Improved UI</small>
+  </footer>
   <script src="popup.js"></script>
 </body>
 </html>
