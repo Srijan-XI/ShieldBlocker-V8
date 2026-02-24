@@ -1,12 +1,24 @@
 {
   "name": "shieldblocker-v8-tools",
-  "version": "1.0.0",
+  "version": "1.8.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "generate:rules": "node scripts/generate-blocklist.js 400"
+    "generate:rules": "node scripts/generate-blocklist.js 400",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "jest": "^29.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
   }
 }

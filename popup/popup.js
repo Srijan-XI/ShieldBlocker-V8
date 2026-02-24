@@ -3,26 +3,52 @@ const els = {
   siteStatus: document.getElementById('site-status'),
   siteToggle: document.getElementById('site-toggle'),
   globalToggle: document.getElementById('global-toggle'),
-  allowlist: document.getElementById('allowlist')
+  allowlist: document.getElementById('allowlist'),
+  errorBanner: document.getElementById('error-banner'),
 };
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function showError(msg) {
+  if (!els.errorBanner) return;
+  els.errorBanner.textContent = msg;
+  els.errorBanner.hidden = false;
+}
+
 function setBadge(el, state) {
-  el.classList.remove('off','paused');
+  el.classList.remove('off', 'paused');
   switch (state) {
-    case 'on': el.textContent = 'ACTIVE'; break;
-    case 'off': el.textContent = 'OFF'; el.classList.add('off'); break;
+    case 'on':     el.textContent = 'ACTIVE'; break;
+    case 'off':    el.textContent = 'OFF';    el.classList.add('off'); break;
     case 'paused': el.textContent = 'PAUSED'; el.classList.add('paused'); break;
     default: el.textContent = state;
   }
 }
 
-async function fetchState() {
-  return new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: 'GET_STATE' }, (resp) => {
-      resolve(resp || { allowlist: [], globalEnabled: true });
+/** Send a single message to the background service worker; rejects on error. */
+function sendMsg(msg) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(msg, (resp) => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      if (!resp || resp.status === 'error') {
+        return reject(new Error((resp && resp.error) || 'Unknown background error'));
+      }
+      resolve(resp);
     });
   });
 }
+
+const fetchState  = ()         => sendMsg({ type: 'GET_STATE' });
+const toggleSite  = (hostname) => sendMsg({ type: 'TOGGLE_SITE', hostname });
+const toggleGlobal = ()        => sendMsg({ type: 'TOGGLE_GLOBAL' });
+
+// ---------------------------------------------------------------------------
+// Render helpers
+// ---------------------------------------------------------------------------
 
 function renderAllowlist(list, currentHost) {
   els.allowlist.innerHTML = '';
@@ -33,81 +59,123 @@ function renderAllowlist(list, currentHost) {
     return;
   }
   list.forEach(host => {
-    const li = document.createElement('li');
+    const li   = document.createElement('li');
     const span = document.createElement('span');
     span.textContent = host;
     span.className = 'host';
+    span.title = host;
     li.appendChild(span);
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = host === currentHost ? 'Remove (This)' : 'Remove';
-    btn.addEventListener('click', () => toggleSite(host));
+    btn.addEventListener('click', () => handleRemove(host));
     li.appendChild(btn);
     els.allowlist.appendChild(li);
   });
 }
 
-async function toggleSite(hostname) {
-  return new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: 'TOGGLE_SITE', hostname }, (resp) => {
-      resolve(resp);
-    });
-  });
+/**
+ * Render the full popup state from a single `state` object.
+ * All UI updates go through here so there is one source of truth.
+ */
+function renderState(state, hostname) {
+  const { allowlist, globalEnabled } = state;
+  const siteAllowed = allowlist.includes(hostname);
+
+  setBadge(els.globalStatus, globalEnabled ? 'on' : 'off');
+  els.globalToggle.setAttribute('aria-pressed', String(!globalEnabled));
+  els.globalToggle.textContent = globalEnabled ? 'Pause Global' : 'Resume Global';
+
+  if (!globalEnabled) {
+    els.siteStatus.textContent = 'Blocking paused globally';
+  } else {
+    els.siteStatus.textContent = siteAllowed
+      ? `Blocking is OFF on ${hostname}`
+      : `Blocking is ON on ${hostname}`;
+  }
+
+  els.siteToggle.textContent = siteAllowed ? 'Enable Blocking Here' : 'Disable Blocking Here';
+  els.siteToggle.setAttribute('aria-pressed', String(siteAllowed));
+
+  renderAllowlist(allowlist, hostname);
 }
 
-async function toggleGlobal() {
-  return new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: 'TOGGLE_GLOBAL' }, (resp) => {
-      resolve(resp);
-    });
-  });
+// ---------------------------------------------------------------------------
+// Event handlers (declared at module scope so they can reference `state`)
+// ---------------------------------------------------------------------------
+let _hostname = '';
+
+// Mutable state object — handlers mutate this in place so every handler
+// always sees the latest values (fixes the stale-closure bug on globalToggle).
+const state = { allowlist: [], globalEnabled: true };
+
+async function handleToggleSite() {
+  try {
+    const resp = await toggleSite(_hostname);
+    state.allowlist = resp.allowlist || [];
+    renderState(state, _hostname);
+  } catch (e) {
+    showError('Failed to toggle site blocking: ' + e.message);
+  }
 }
+
+async function handleToggleGlobal() {
+  try {
+    const resp = await toggleGlobal();
+    state.globalEnabled = resp.globalEnabled;
+    renderState(state, _hostname);
+  } catch (e) {
+    showError('Failed to toggle global blocking: ' + e.message);
+  }
+}
+
+// Removing from the allowlist list is the same as toggling the site back on.
+async function handleRemove(host) {
+  try {
+    const resp = await toggleSite(host);
+    state.allowlist = resp.allowlist || [];
+    renderState(state, _hostname);
+  } catch (e) {
+    showError('Failed to remove site: ' + e.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Initialisation
+// ---------------------------------------------------------------------------
 
 async function init() {
-  chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
-    const url = new URL(tab.url);
-    const hostname = url.hostname;
-    const state = await fetchState();
-    const { allowlist, globalEnabled } = state;
-    const siteAllowed = allowlist.includes(hostname);
+  try {
+    const [tab] = await new Promise(resolve =>
+      chrome.tabs.query({ active: true, currentWindow: true }, resolve)
+    );
 
-    // Global badge
-    setBadge(els.globalStatus, globalEnabled ? 'on' : 'off');
-    els.globalToggle.setAttribute('aria-pressed', (!globalEnabled).toString());
-    els.globalToggle.textContent = globalEnabled ? 'Pause Global' : 'Resume Global';
-
-    // Site status
-    if (!globalEnabled) {
-      els.siteStatus.textContent = `Blocking paused globally`;
-    } else {
-      els.siteStatus.textContent = siteAllowed ? `Blocking is OFF on ${hostname}` : `Blocking is ON on ${hostname}`;
+    // Disable site toggle on pages where content scripts cannot run.
+    if (!tab || !tab.url ||
+        tab.url.startsWith('chrome://') ||
+        tab.url.startsWith('chrome-extension://') ||
+        tab.url.startsWith('edge://') ||
+        tab.url.startsWith('about:')) {
+      els.siteStatus.textContent = 'Not available on this page.';
+      els.siteToggle.disabled = true;
+      return;
     }
-    els.siteToggle.textContent = siteAllowed ? 'Enable Blocking Here' : 'Disable Blocking Here';
-    els.siteToggle.setAttribute('aria-pressed', siteAllowed.toString());
 
-    renderAllowlist(allowlist, hostname);
+    _hostname = new URL(tab.url).hostname;
 
-    els.siteToggle.onclick = async () => {
-      const resp = await toggleSite(hostname);
-      const updatedList = resp.allowlist || [];
-      const nowAllowed = updatedList.includes(hostname);
-      els.siteStatus.textContent = !globalEnabled ? `Blocking paused globally` : (nowAllowed ? `Blocking is OFF on ${hostname}` : `Blocking is ON on ${hostname}`);
-      els.siteToggle.textContent = nowAllowed ? 'Enable Blocking Here' : 'Disable Blocking Here';
-      els.siteToggle.setAttribute('aria-pressed', nowAllowed.toString());
-      renderAllowlist(updatedList, hostname);
-    };
+    const resp = await fetchState();
+    state.allowlist    = resp.allowlist    || [];
+    state.globalEnabled = resp.globalEnabled ?? true;
 
-    els.globalToggle.onclick = async () => {
-      const resp = await toggleGlobal();
-      const enabled = resp.globalEnabled;
-      setBadge(els.globalStatus, enabled ? 'on' : 'off');
-      els.globalToggle.textContent = enabled ? 'Pause Global' : 'Resume Global';
-      els.globalToggle.setAttribute('aria-pressed', (!enabled).toString());
-      // Update site status to reflect global change
-      const siteAllowedNow = allowlist.includes(hostname);
-      els.siteStatus.textContent = !enabled ? `Blocking paused globally` : (siteAllowedNow ? `Blocking is OFF on ${hostname}` : `Blocking is ON on ${hostname}`);
-    };
-  });
+    renderState(state, _hostname);
+
+    els.siteToggle.addEventListener('click', handleToggleSite);
+    els.globalToggle.addEventListener('click', handleToggleGlobal);
+
+  } catch (e) {
+    showError('Could not connect to the extension. Try refreshing the page.');
+    console.error('[ShieldBlocker] init error:', e);
+  }
 }
 
 init();
