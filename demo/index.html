@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldBlocker-V8 </title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="demo-container">
+        <!-- Extension Popup Simulation -->
+        <div class="extension-popup">
+            <div class="popup-header">
+                <div class="logo">
+                    <div class="shield-icon">🛡️</div>
+                    <h2>ShieldBlocker-V8</h2>
+                </div>
+                <div class="theme-toggle">
+                    <button id="themeToggle" class="btn btn--sm">🌙</button>
+                </div>
+            </div>
+
+            <div class="popup-content">
+                <!-- Main Toggle -->
+                <div class="main-toggle">
+                    <span class="toggle-label">Ad Blocker</span>
+                    <label class="switch">
+                        <input type="checkbox" id="mainToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-section">
+                    <div class="stat-item">
+                        <div class="stat-number" id="blockedCount">247</div>
+                        <div class="stat-label">Ads blocked today</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="savedTime">2.1s</div>
+                        <div class="stat-label">Time saved</div>
+                    </div>
+                </div>
+
+                <!-- Current Site -->
+                <div class="current-site">
+                    <div class="site-info">
+                        <div class="site-icon">🌐</div>
+                        <div class="site-details">
+                            <div class="site-name" id="currentSite">example.com</div>
+                            <div class="site-status" id="siteStatus">3 ads blocked</div>
+                        </div>
+                    </div>
+                    <button class="btn btn--sm" id="siteToggle">Allow site</button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="actions-section">
+                    <button class="btn btn--outline btn--sm" id="refreshRules">
+                        <span>🔄</span> Refresh Rules
+                    </button>
+                    <button class="btn btn--outline btn--sm" id="viewSettings">
+                        <span>⚙️</span> Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Website Content -->
+        <div class="demo-website">
+            <div class="website-header">
+                <h1>Demo Website</h1>
+                <p>This simulates a website with ads that ShieldBlocker-V8 would block</p>
+            </div>
+
+            <div class="website-content">
+                <div class="content-main">
+                    <article class="article">
+                        <h2>Sample Article Content</h2>
+                        <p>This is sample website content. Notice how the ad spaces are blocked by our extension.</p>
+                        <p>ShieldBlocker-V8 uses advanced pattern matching and declarativeNetRequest APIs to efficiently block advertisements across all websites.</p>
+                    </article>
+                </div>
+
+                <!-- Simulated Ads (will be hidden when blocker is active) -->
+                <div class="ad-container ad blocked-ad" data-ad-type="banner">
+                    <div class="ad-placeholder">
+                        <span>🚫 Banner Ad Blocked</span>
+                        <div class="ad-details">doubleclick.net</div>
+                    </div>
+                </div>
+
+                <div class="ad-container advertisement blocked-ad" data-ad-type="sidebar">
+                    <div class="ad-placeholder">
+                        <span>🚫 Sidebar Ad Blocked</span>
+                        <div class="ad-details">googlesyndication.com</div>
+                    </div>
+                </div>
+
+                <div class="ad-container sponsored blocked-ad" data-ad-type="popup">
+                    <div class="ad-placeholder">
+                        <span>🚫 Popup Ad Blocked</span>
+                        <div class="ad-details">amazon-adsystem.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal hidden" id="settingsModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>ShieldBlocker-V8 Settings</h3>
+                    <button class="modal-close" id="closeSettings">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Block Lists</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked>
+                                <span>EasyList (Ads)</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked>
+                                <span>EasyPrivacy (Trackers)</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox">
+                                <span>Fanboy's Annoyances</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Allowed Sites</label>
+                        <div class="allowed-sites" id="allowedSitesList">
+                            <div class="site-entry">
+                                <span>news.ycombinator.com</span>
+                                <button class="btn btn--sm remove-site">Remove</button>
+                            </div>
+                            <div class="site-entry">
+                                <span>reddit.com</span>
+                                <button class="btn btn--sm remove-site">Remove</button>
+                            </div>
+                        </div>
+                        <div class="add-site-form">
+                            <input type="text" class="form-control" placeholder="Add site to allowlist" id="newSiteInput">
+                            <button class="btn btn--primary btn--sm" id="addSiteBtn">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Statistics</label>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-value">1,247</div>
+                                <div class="stat-name">Total Blocked</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">23.4s</div>
+                                <div class="stat-name">Time Saved</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">2.1MB</div>
+                                <div class="stat-name">Data Saved</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn--outline" id="resetStats">Reset Statistics</button>
+                    <button class="btn btn--primary" id="saveSettings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Installation Instructions -->
+        <div class="instructions-panel">
+            <h3>🚀 Installation Instructions</h3>
+            <div class="install-tabs">
+                <button class="tab-btn active" data-tab="chrome">Chrome</button>
+                <button class="tab-btn" data-tab="firefox">Firefox</button>
+            </div>
+            <div class="tab-content active" id="chrome-tab">
+                <ol>
+                    <li>Download the ShieldBlocker-V8 extension files</li>
+                    <li>Open Chrome and go to <code>chrome://extensions/</code></li>
+                    <li>Enable "Developer mode" in the top right</li>
+                    <li>Click "Load unpacked" and select the extension folder</li>
+                    <li>The extension icon will appear in your toolbar</li>
+                </ol>
+            </div>
+            <div class="tab-content" id="firefox-tab">
+                <ol>
+                    <li>Download the ShieldBlocker-V8 extension files</li>
+                    <li>Open Firefox and go to <code>about:debugging</code></li>
+                    <li>Click "This Firefox" in the sidebar</li>
+                    <li>Click "Load Temporary Add-on"</li>
+                    <li>Select the manifest.json file from the extension folder</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Features List -->
+        <div class="features-panel">
+            <h3>✨ Features</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-text">
+                        <strong>Advanced Blocking</strong>
+                        <p>Uses Manifest V3 declarativeNetRequest for efficient ad blocking</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-text">
+                        <strong>High Performance</strong>
+                        <p>Minimal memory usage with optimized pattern matching</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-text">
+                        <strong>Cross-Browser</strong>
+                        <p>Works on both Chrome and Firefox with WebExtension APIs</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-text">
+                        <strong>Per-Site Control</strong>
+                        <p>Easy toggle for individual websites and custom allowlists</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
